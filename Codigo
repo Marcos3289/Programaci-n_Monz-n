@@ -1,0 +1,140 @@
+// CALCULADORA MONZÓN
+#include <LiquidCrystal_I2C.h> // LCD por I2C 
+#include <Wire.h> //comunicación I2C 
+#include <Keypad.h> //Teclado
+
+// Pantalla LCD. npxmp FilasxColumnas
+const byte mp = 20;
+const byte np = 4;
+LiquidCrystal_I2C lcd(0x27,mp,np); 
+
+// Teclado ntxmt FilasxColumnas
+const byte nt = 4; 
+const byte mt = 4;
+char tabla[nt][mt]={
+        {'1', '2', '3', '+'},
+        {'4', '5', '6', '-'},
+        {'7', '8', '9', '*'},
+        {'C', '0', '.', '='}};  
+byte PinF[nt] = {7,6,5,4}; 
+byte PinC[mt] = {3,2,1,0}; 
+Keypad teclado = Keypad(makeKeymap(tabla),
+                        PinF,PinC,nt,mt); 
+
+// variables de calculadora
+float numA = 0;
+float numB = 0;
+float resultado = 0; 
+String num1, num2;
+char operador  = ' ';
+int tamano = 0;
+byte cualnum = 0;
+boolean haypunto = 0;
+
+
+void setup(){
+  // inicializa pantalla
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print("-----KATHI<3-------");
+  lcd.setCursor(0,1);
+  delay (60000);
+  lcd.clear();
+}
+
+void loop(){
+  char tecla = teclado.getKey(); 
+
+  // tecla presionada numero
+  if (tecla != NO_KEY){
+    if (tecla=='1' || tecla=='2' || tecla=='3' ||
+        tecla=='4' || tecla=='5' || tecla=='6' || 
+        tecla=='7' || tecla=='8' || tecla=='9' || 
+        tecla=='0'){
+      if (cualnum <= 1){
+        num1 = num1 + tecla;
+        cualnum = 1;
+        }
+      if (cualnum == 2){
+        num2 = num2 + tecla;
+        }
+    }
+    
+    // tecla punto decimal
+    if (tecla=='.' and haypunto==0){
+      if (cualnum == 1 or cualnum == 0){
+        tamano = num1.length();
+        if (tamano == 0)
+          {num1= "0.";}
+        else
+          {num1 = num1 + tecla;}
+        }
+      if (cualnum == 2){
+        tamano = num2.length();
+        if (tamano == 0)
+          {num2= "0.";}
+        else
+          {num2 = num2 + tecla;}
+        }
+      haypunto = 1;
+      }
+  
+    //tecla de Operacion
+    if (cualnum >= 1 && (tecla == '+' || 
+        tecla == '-' || tecla == '*' || 
+        tecla == '/')){
+      operador = tecla;
+      cualnum = 2;
+      haypunto = 0;
+      }
+  
+    // obtener resultado
+    if (tecla == '=' && cualnum == 2){
+      obtenerresultado();
+      }
+  
+    //tecla Borrar C Clear
+    if (tecla == 'C'){
+      cualnum = 0;
+      num1 = "";   num2 = "";
+      operador = ' ';
+      resultado = 0;
+      haypunto = 0;
+      }
+    numA = num1.toFloat();
+    numB = num2.toFloat();
+  
+    // SALIDA A PANTALLA LCD
+    mostrarpantalla();
+    }
+  }
+
+void obtenerresultado(){
+  if (operador == '+') 
+    {resultado = numA + numB;}
+  if (operador == '-')
+    {resultado = numA - numB;}
+  if (operador == '*')
+    {resultado = numA * numB;}
+  if (operador == '/')
+    {resultado = numA / numB;}
+  num1 = String(resultado);
+  num2 = "";
+  cualnum = 2;
+  haypunto = 0;
+  }
+
+
+void mostrarpantalla(){
+    lcd.clear();
+    lcd.setCursor(0,0);
+    // muestra decimales = 3
+    lcd.print(numA,3);
+    if (numB!=0){
+      lcd.setCursor(0,1);
+      lcd.print(numB,3);    
+      }
+    lcd.setCursor(mp-2,0);
+    lcd.print(operador);
+  }
